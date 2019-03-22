@@ -1,0 +1,281 @@
+﻿;; Without this comment emacs25 adds (package-initialize) here
+;; (package-initialize)
+
+;;(setenv "HOME" "F:/ides/emacs/emacs-home")
+;;(setq default-directory "~/")
+
+(display-time-mode 1) ;; 常显 
+(setq display-time-24hr-format t) ;;格式 
+(setq display-time-day-and-date t) ;;显示时间、星期、日期
+(tool-bar-mode 0) 
+(menu-bar-mode 0) 
+(scroll-bar-mode 0) 
+(setq inhibit-startup-message t)
+(global-hl-line-mode 1)
+(setq visible-bell nil
+      ring-bell-function 'ignore)
+	  (global-linum-mode 1) ; always show line numbers                              
+(setq linum-format "%d> ")  ;set format
+(set-default-font "Source Code Pro 12")
+
+;;(load-file "F:/ides/emacs/emacs-home/.emacs.d/init.el")
+(require 'package)
+(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+                    (not (gnutls-available-p))))
+       (proto (if no-ssl "http" "https")))
+  ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
+  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
+  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
+  (when (< emacs-major-version 24)
+    ;; For important compatibility libraries like cl-lib
+    (add-to-list 'package-archives '("gnu" . (concat proto "://elpa.gnu.org/packages/")))))
+(setq package-archives '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
+				   ("melpa" . "http://elpa.emacs-china.org/melpa/")))
+
+(package-initialize)
+
+
+;; Remove text in active region if inserting text
+(delete-selection-mode 1)
+
+;; Always display line and column numbers
+(setq line-number-mode t)
+(setq column-number-mode t)
+;; Set default tab width
+(setq default-tab-width 4)
+
+;; Never insert tabs
+(set-default 'indent-tabs-mode nil)
+
+
+;; Bootstrap `use-package'
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(require 'use-package)
+
+
+(use-package zenburn-theme
+  :ensure t
+  :config
+  (load-theme 'zenburn t)
+  (setq zenburn-override-colors-alist
+      '(("zenburn-bg+05" . "#282828")
+        ("zenburn-bg+1"  . "#2F2F2F")
+        ("zenburn-bg+2"  . "#3F3F3F")
+        ("zenburn-bg+3"  . "#4F4F4F"))))
+(use-package ivy
+  :ensure t
+  :config
+  (ivy-mode 1)
+  (setq ivy-use-virtual-buffers t)
+  (setq enable-recursive-minibuffers t)
+  (global-set-key (kbd "C-c C-r") 'ivy-resume)
+  (global-set-key (kbd "<f6>") 'ivy-resume))
+
+(use-package ace-window
+  :ensure t
+  :config
+  (global-set-key (kbd "M-o") 'ace-window)
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (global-set-key [remap other-window] 'ace-window))
+
+(use-package swiper
+  :ensure t
+  :config
+  (global-set-key "\C-s" 'swiper))
+
+(use-package counsel
+  :ensure t
+  :config
+  (global-set-key (kbd "M-x") 'counsel-M-x)
+  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+  (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+  (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+  (global-set-key (kbd "<f1> l") 'counsel-find-library)
+  (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+  (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+  (global-set-key (kbd "C-c g") 'counsel-git)
+  (global-set-key (kbd "C-c j") 'counsel-git-grep)
+  (global-set-key (kbd "C-c a") 'counsel-ag)
+  (global-set-key (kbd "C-x l") 'counsel-locate)
+  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
+
+;;Make emacs' window title show path of current file:
+
+(setq-default frame-title-format
+              '(:eval
+                (format "%s@%s: %s %s"
+                        (or (file-remote-p default-directory 'user)
+                            user-real-login-name)
+                        (or (file-remote-p default-directory 'host)
+                            system-name)
+                        (buffer-name)
+                        (cond
+                         (buffer-file-truename
+                          (concat "(" buffer-file-truename ")"))
+                         (dired-directory
+                          (concat "{" dired-directory "}"))
+                         (t
+                          "[no file]")))))
+						  
+;;https://github.com/chenglou/emacs.d/blob/master/init.el
+(electric-pair-mode 1)
+(show-paren-mode 1)
+(setq show-paren-delay 0)
+(setq show-paren-style 'parenthesis)
+(use-package rainbow-delimiters
+  :ensure t
+  :init
+  (progn
+    (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)))
+
+;; pyhton
+(use-package company
+  :ensure t
+  :init
+  (setq company-minimum-prefix-length 2)
+  (setq company-dabbrev-ignore-case t)
+  (setq company-dabbrev-downcase 0)
+  (setq company-idle-delay 0)
+  :config
+  (add-hook 'after-init-hook 'global-company-mode)
+  (define-key company-active-map (kbd "C-n") #'company-select-next)
+  (define-key company-active-map (kbd "C-p") #'company-select-previous)
+  (define-key company-active-map (kbd "C-s") #'company-filter-candidates)
+   (setq company-show-numbers t)
+  (global-set-key (kbd "C-c y") 'company-yasnippet)
+  )
+(use-package elpy
+  :ensure t
+  :init
+  (setq elpy-rpc-backend "jedi")
+  (elpy-enable)
+  :config
+  (add-hook 'python-mode-hook 'elpy-mode)
+  (setq python-shell-interpreter "jupyter"
+      python-shell-interpreter-args "console --simple-prompt"
+      python-shell-prompt-detect-failure-warning nil)
+  (add-to-list 'python-shell-completion-native-disabled-interpreters
+               "jupyter")
+  :bind (("M-*" . pop-tag-mark))
+  )
+(use-package yasnippet
+	:init
+	(yas-global-mode)
+	:config
+	(yas-reload-all))
+
+(use-package drag-stuff
+  :ensure t
+  :config
+  (drag-stuff-global-mode 1)
+  (drag-stuff-define-keys)
+  )
+
+
+(use-package ein
+  :ensure t
+  :config
+
+  (setq ein:complete-on-dot -1)
+
+  (cond
+   ((eq system-type 'darwin) (setq ein:console-args '("--gui=osx" "--matplotlib=osx" "--colors=Linux")))
+   ((eq system-type 'gnu/linux) (setq ein:console-args '("--gui=gtk3" "--matplotlib=gtk3" "--colors=Linux"))))
+
+  (setq ein:query-timeout 1000)
+
+  (defun load-ein ()
+    (ein:notebooklist-load)
+    (interactive)
+    (ein:notebooklist-open)))
+
+
+;; Font settings.
+
+;; Setting English Font
+(add-to-list 'default-frame-alist '(height . 35))
+(add-to-list 'default-frame-alist '(width . 100))
+(global-set-key (kbd "M-SPC") 'set-mark-command)
+
+(use-package pyim
+  :ensure nil
+  :demand t
+  :config
+  ;; 激活 basedict 拼音词库
+  (use-package pyim-basedict
+    :ensure nil
+    :config (pyim-basedict-enable))
+
+  ;; 五笔用户使用 wbdict 词库
+  ;; (use-package pyim-wbdict
+  ;;   :ensure nil
+  ;;   :config (pyim-wbdict-gbk-enable))
+
+  (setq default-input-method "pyim")
+
+  ;; 我使用全拼
+  (setq pyim-default-scheme 'quanpin)
+
+  ;; 设置 pyim 探针设置，这是 pyim 高级功能设置，可以实现 *无痛* 中英文切换 :-)
+  ;; 我自己使用的中英文动态切换规则是：
+  ;; 1. 光标只有在注释里面时，才可以输入中文。
+  ;; 2. 光标前是汉字字符时，才能输入中文。
+  ;; 3. 使用 M-j 快捷键，强制将光标前的拼音字符串转换为中文。
+  (setq-default pyim-english-input-switch-functions
+                '(pyim-probe-dynamic-english
+                  pyim-probe-isearch-mode
+                  pyim-probe-program-mode
+                  pyim-probe-org-structure-template))
+
+  (setq-default pyim-punctuation-half-width-functions
+                '(pyim-probe-punctuation-line-beginning
+                  pyim-probe-punctuation-after-punctuation))
+
+  ;; 开启拼音搜索功能
+  (pyim-isearch-mode 1)
+
+  ;; 使用 pupup-el 来绘制选词框, 如果用 emacs26, 建议设置
+  ;; 为 'posframe, 速度很快并且菜单不会变形，不过需要用户
+  ;; 手动安装 posframe 包。
+  (setq pyim-page-tooltip 'popup)
+
+  ;; 选词框显示5个候选词
+  (setq pyim-page-length 5)
+
+  ;; 让 Emacs 启动时自动加载 pyim 词库
+  (add-hook 'emacs-startup-hook
+            #'(lambda () (pyim-restart-1 t)))
+  :bind
+  (("M-j" . pyim-convert-code-at-point) ;与 pyim-probe-dynamic-english 配合
+   ("C-;" . pyim-delete-word-from-personal-buffer)))
+(setq default-input-method "pyim")
+(global-set-key (kbd "C-\\") 'toggle-input-method)
+(use-package scala-mode
+  :interpreter
+  ("scala" . scala-mode))
+
+;;;; 设置编辑环境
+(setenv "LANG" "en_US.UTF-8")
+(setenv "LC_ALL" "en_US.UTF-8")
+(setenv "LC_CTYPE" "en_US.UTF-8")
+(setenv "PYTHONIOENCODING" "utf-8")
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default-input-method "pyim")
+ '(package-selected-packages
+   (quote
+    (scala-mode drag-stuff posframe pyim zenburn-theme use-package rainbow-delimiters elpy ein counsel ace-window))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+(put 'downcase-region 'disabled nil)
+(put 'upcase-region 'disabled nil)
