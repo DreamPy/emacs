@@ -63,7 +63,7 @@
 (set-default buffer-file-coding-system 'utf8)
 (set-default-coding-systems 'utf-8)
 ;; 解决粘贴中文出现乱码的问题
-(set-clipboard-coding-system 'utf-8)
+;;(set-clipboard-coding-system 'utf-8)
 ;; 终端中文乱码
 (set-terminal-coding-system 'utf-8)
 (modify-coding-system-alist 'process "*" 'utf-8)
@@ -87,6 +87,3 @@
     (set-file-name-coding-system 'gbk)))
 
 (provide 'init-ui)
-
-
-					

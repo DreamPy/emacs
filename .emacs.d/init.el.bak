@@ -1,4 +1,4 @@
-﻿;; Without this comment emacs25 adds (package-initialize) here
+;; Without this comment emacs25 adds (package-initialize) here
 ;; (package-initialize)
 
 ;;(setenv "HOME" "F:/ides/emacs/emacs-home")

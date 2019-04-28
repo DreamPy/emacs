@@ -54,4 +54,11 @@
 (when (memq window-system '(mac ns))
   (exec-path-from-shell-initialize))
 (add-hook 'emacs-lisp-mode-hook 'show-paren-mode)
-(provide init-better-defaults)
+(add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
+(add-hook 'yang-mode 'show-paren-mode 'electric-pair-mode)
+
+(setq backup-directory-alist (quote (("." . "~/.backups"))))
+(add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/")
+(setq ispell-program-name "aspell")
+(setq ispell-personal-dictionary "~/.ispell")
+(provide 'init-better-defaults)
