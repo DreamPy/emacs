@@ -1,5 +1,4 @@
-﻿
-(when (>= emacs-major-version 24)
+﻿(when (>= emacs-major-version 24)
   (require 'package)
   (setq package-enable-at-startup nil)
   (package-initialize)
@@ -48,6 +47,15 @@
 (setq auto-save-silent t)
 (setq auto-save-delete-trailing-whitespace t)
 (auto-save-enable)
+(use-package auto-compile
+  :defer t
+  :config (auto-compile-on-load-mode))
+(use-package avy
+  :defer 1
+  :bind (("C-;" . avy-goto-char)))
+(use-package expand-region
+  :defer 1
+  :bind (("C-=" . er/expand-region)))
 (use-package posframe
   :load-path "~/.emacs.d/lisp/posframe/")
 (use-package zenburn-theme
@@ -59,29 +67,40 @@
         ("zenburn-bg+1"  . "#2F2F2F")
         ("zenburn-bg+2"  . "#3F3F3F")
         ("zenburn-bg+3"  . "#4F4F4F"))))
-  (use-package ivy
-:defer 1
-:config
-(setq ivy-initial-inputs-alist nil
-      ivy-wrap t
-      ivy-height 15
-      ivy-fixed-height-minibuffer t
-      ivy-format-function #'ivy-format-function-line
-      )
-(ivy-mode +1)
-:bind ([remap switch-to-buffer] . #'ivy-switch-buffer)
-)
-
-(use-package ivy-posframe
+(use-package ivy
   :defer 1
+  :config
+  (setq ivy-initial-inputs-alist nil
+	ivy-wrap t
+	ivy-height 15
+	ivy-fixed-height-minibuffer t
+	ivy-format-function #'ivy-format-function-line
+	)
+  (ivy-mode +1)
+  :bind ([remap switch-to-buffer] . #'ivy-switch-buffer)
+  )
+(use-package gruvbox-theme
+  :config
+  (load-theme 'gruvbox-dark-medium t))
+(use-package ivy-posframe
+  :ensure t
   :after (ivy)
   :config
-  (setq ivy-display-function #'ivy-posframe-display-at-point
-	ivy-fixed-height-minibuffer nil
-	ivy-posframe-parameters
-	`((min-width . 90)
-	  (min-height .,ivy-height)
-	  (internal-border-width . 10))))
+  (setq ivy-fixed-height-minibuffer nil
+        ;; ivy-display-function #'ivy-posframe-display-at-point
+        ivy-posframe-parameters
+        `((min-width . 90)
+          (min-height .,ivy-height)
+          (internal-border-width . 10)))
+  (push '(t . ivy-posframe-display-at-point) ivy-display-functions-alist)
+  (push '(completion-at-point . ivy-posframe-display-at-point)
+        ivy-display-functions-alist)
+  (push '(complete-symbol . ivy-posframe-display-at-point) ivy-display-functions-alist)
+  (push '(company-files . ivy-posframe-display-at-point) ivy-display-functions-alist)
+  ;; posframe doesn't work well with async sources
+  (push '(swiper . ivy-posframe-display-at-window-bottom-left)
+        ivy-display-functions-alist)
+  (ivy-posframe-enable))
 (use-package flycheck
   :defer t
   :hook (prog-mode . flycheck-mode)
@@ -102,49 +121,101 @@
   (global-set-key "\C-s" 'swiper))
 
 (use-package counsel
-  :ensure t
+  :defer 1
+  :after (ivy)
+  :bind (([remap execute-extended-command] . counsel-M-x)
+     ([remap find-file]                . counsel-find-file)
+     ([remap find-library]             . find-library)
+     ([remap imenu]                    . counsel-imenu)
+     ([remap recentf-open-files]       . counsel-recentf)
+     ([remap org-capture]              . counsel-org-capture)
+     ([remape swiper]                  . counsel-grep-or-swiper)
+     ([remap describe-face]            . counsel-describe-face)
+     ([remap describe-function]        . counsel-describe-function)
+     ([remap describe-variable]        . counsel-describe-variable))
+
   :config
-  (global-set-key (kbd "M-x") 'counsel-M-x)
-  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-  (global-set-key (kbd "<f1> f") 'counsel-describe-function)
-  (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-  (global-set-key (kbd "<f1> l") 'counsel-find-library)
-  (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-  (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-  (global-set-key (kbd "C-c g") 'counsel-git)
-  (global-set-key (kbd "C-c j") 'counsel-git-grep)
-  (global-set-key (kbd "C-c a") 'counsel-ag)
-  (global-set-key (kbd "C-x l") 'counsel-locate)
-  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
+  (setq counsel-find-file-ignore-regexp "\\(?:^[#.]\\)\\|\\(?:[#~]$\\)\\|\\(?:^Icon?\\)"
+    counsel-rg-base-command "rg -zS --no-heading --line-number --color never %s ."
+    counsel-ag-base-command "ag -zS --nocolor --nogroup %s"
+    counsel-pt-base-command "pt -zS --nocolor --nogroup -e %s")
+  )
+(use-package counsel-projectile
+  :after projectile
+  :commands (counsel-projectile-find-file counsel-projectile-find-dir counsel-projectile-switch-to-buffer
+                                          counsel-projectile-grep counsel-projectile-ag counsel-projectile-switch-project)
+  :init
+  :bind (([remap projectile-find-file]        . counsel-projectile-find-file)
+         ([remap projectile-find-dir]         . counsel-projectile-find-dir)
+         ([remap projectile-switch-to-buffer] . counsel-projectile-switch-to-buffer)
+         ([remap projectile-grep]             . counsel-projectile-grep)
+         ([remap projectile-ag]               . counsel-projectile-ag)
+         ([remap projectile-switch-project]   . counsel-projectile-switch-project)))
 
-;;Make emacs' window title show path of current file:
-
+(use-package flx
+  :defer t
+  :init
+  (setq ivy-re-builders-alist
+	'((counsel-ag . ivy--regex-plus)
+	  (counsel-grep . ivy--regex-plus)
+	  (swiper . ivy--regex-plus)
+	  (t . ivy--regex-fuzzy))
+	ivy-initial-inputs-alist nil)
+  )
+(use-package helpful
+  :defer 1
+  :init
+  (setq counsel-describe-function-function #'helpful-function
+    counsel-describe-variable-function #'helpful-variable)
+  :bind (([remap describe-key] . helpful-key))
+  )
 
 (use-package rainbow-delimiters
   :ensure t
   :init
   (progn
     (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)))
-
-;; pyhton
-(use-package company
-  :ensure t
+(use-package which-key
+  :defer 1
   :init
-  (setq company-minimum-prefix-length 2)
-  (setq company-dabbrev-ignore-case t)
-  (setq company-dabbrev-downcase 0)
-  (setq company-idle-delay 0)
+  (setq which-key-sort-order #'which-key-prefix-then-key-order
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10)
   :config
-  (add-hook 'after-init-hook 'global-company-mode)
+  (which-key-mode +1)
+  )
+
+
+(use-package company
+  :init
+  (setq company-idle-delay 0
+	company-tooltip-limit 10
+	company-minimum-prefix-length 2
+	company-dabbrev-downcase nil
+	company-dabbrev-ignore-case nil
+	company-dabbrev-code-other-buffers t
+	company-tooltip-align-annotations t
+	company-require-match 'never
+	company-show-numbers t
+	company-global-modes
+	'(not comint-mode erc-mode message-mode help-mode gud-mode)
+	company-frontends '(company-pseudo-tooltip-frontend company-echo-metadata-frontend)
+	company-backends '((:separate company-capf company-yasnippet company-files)))
+  :config
   (define-key company-active-map (kbd "C-n") #'company-select-next)
   (define-key company-active-map (kbd "C-p") #'company-select-previous)
   (define-key company-active-map (kbd "C-s") #'company-filter-candidates)
-   (setq company-show-numbers t)
-   (global-set-key (kbd "C-c y") 'company-yasnippet))
-;;(use-package company-posframe
- ;; :if (display-graphic-p)
-  ;;:after company
-;;:hook (company-mode . company-posframe-mode))
+  (global-company-mode +1))
+
+
+(use-package company-posframe
+  :if (display-graphic-p)
+  :after company
+  :hook (company-mode . company-posframe-mode))
+
 (defconst mage-cache-dir "~/.local/cache/")
 (use-package projectile
   :defer 1
@@ -166,18 +237,19 @@
   (elpy-enable)
   :config
   (add-hook 'python-mode-hook 'elpy-mode)
+  (use-package py-autopep8)
+  (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
   (setq python-shell-interpreter "jupyter"
       python-shell-interpreter-args "console --simple-prompt"
       python-shell-prompt-detect-failure-warning nil)
   (add-to-list 'python-shell-completion-native-disabled-interpreters
                "jupyter")
+  (when (require 'flycheck nil t)
+  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+  (add-hook 'elpy-mode-hook 'flycheck-mode))
   :bind
   (("M-*" . pop-tag-mark)))
-(use-package yasnippet
-	:init
-	(yas-global-mode)
-	:config
-	(yas-reload-all))
+
 
 (use-package drag-stuff
   :ensure t
