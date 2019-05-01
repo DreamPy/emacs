@@ -1,15 +1,42 @@
+;;(load "~/.emacs.d/init.el")
+;;; init.el -*- lexical-binding: t; -*-
+(require 'package)
+(setq package-enable-at-startup nil)
+(package-initialize)
+(setq package-archives '(("gnu"   . "http://elpa.emacs-china.org/gnu/")
+                         ("melpa" . "http://elpa.emacs-china.org/melpa/")
+                         ("org"   . "http://elpa.emacs-china.org/org/")))
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(eval-when-compile
+  (require 'use-package))
+(setq use-package-verbose nil)
+(setq use-package-always-ensure t)
+
+(defconst mage-emacs-dir
+  (eval-when-compile (file-truename user-emacs-directory)))
+(defconst mage-local-dir (concat mage-emacs-dir ".local/"))
+(defconst mage-package-dir (concat mage-local-dir "packages/"))
+(defconst mage-cache-dir (concat mage-local-dir "cache/"))
+(defconst mage-etc-dir (concat mage-local-dir "etc/"))
+(defconst mage-ext-dir (concat mage-emacs-dir "site-lisp/"))
+
+(setq user-emacs-directory (file-name-directory load-file-name))
+(setq package-user-dir (concat mage-emacs-dir "elpa/"))
+(setq-default  abbrev-file-name             (concat mage-local-dir "abbrev.el")
+       auto-save-list-file-name     (concat mage-cache-dir "autosave")
+       backup-directory-alist       (list (cons "." (concat mage-cache-dir "backup/")))
+       custom-file                  (concat mage-local-dir "custom.el")
+       mc/list-file                 (concat mage-etc-dir "mc-lists.el")
+       pcache-directory             (concat mage-cache-dir "pcache/")
+       request-storage-directory    (concat mage-cache-dir "request")
+       server-auth-dir              (concat mage-cache-dir "server/")
+       shared-game-score-directory  (concat mage-etc-dir "shared-game-score/")
+       tramp-auto-save-directory    (concat mage-cache-dir "tramp-auto-save/")
+       tramp-backup-directory-alist backup-directory-alist
+       tramp-persistency-file-name  (concat mage-cache-dir "tramp-persistency.el")
+       url-cache-directory          (concat mage-cache-dir "url/")
+       url-configuration-directory  (concat mage-etc-dir "url/"))
 (load "~/.emacs.d/init.el")
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (posframe zenburn-theme yang-mode use-package solarized-theme smartparens scala-mode rainbow-delimiters pyim popwin monokai-theme iedit hungry-delete expand-region exec-path-from-shell elpy ein drag-stuff counsel ace-window))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )

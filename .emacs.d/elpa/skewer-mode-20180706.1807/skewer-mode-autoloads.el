@@ -1,10 +1,19 @@
 ;;; skewer-mode-autoloads.el --- automatically extracted autoloads
 ;;
 ;;; Code:
-(add-to-list 'load-path (directory-file-name (or (file-name-directory #$) (car load-path))))
+
+(add-to-list 'load-path (directory-file-name
+                         (or (file-name-directory #$) (car load-path))))
+
 
-;;;### (autoloads nil "skewer-bower" "skewer-bower.el" (23421 19419
-;;;;;;  0 0))
+;;;### (autoloads nil "cache-table" "cache-table.el" (0 0 0 0))
+;;; Generated autoloads from cache-table.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "cache-table" '("cache-table-")))
+
+;;;***
+
+;;;### (autoloads nil "skewer-bower" "skewer-bower.el" (0 0 0 0))
 ;;; Generated autoloads from skewer-bower.el
 
 (autoload 'skewer-bower-refresh "skewer-bower" "\
@@ -17,10 +26,11 @@ Dynamically load a library from bower into the current page.
 
 \(fn PACKAGE &optional VERSION)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "skewer-bower" '("skewer")))
+
 ;;;***
 
-;;;### (autoloads nil "skewer-css" "skewer-css.el" (23421 19419 0
-;;;;;;  0))
+;;;### (autoloads nil "skewer-css" "skewer-css.el" (0 0 0 0))
 ;;; Generated autoloads from skewer-css.el
 
 (autoload 'skewer-css-mode "skewer-css" "\
@@ -28,10 +38,11 @@ Minor mode for interactively loading new CSS rules.
 
 \(fn &optional ARG)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "skewer-css" '("skewer-css")))
+
 ;;;***
 
-;;;### (autoloads nil "skewer-html" "skewer-html.el" (23421 19419
-;;;;;;  0 0))
+;;;### (autoloads nil "skewer-html" "skewer-html.el" (0 0 0 0))
 ;;; Generated autoloads from skewer-html.el
 
 (autoload 'skewer-html-mode "skewer-html" "\
@@ -39,10 +50,11 @@ Minor mode for interactively loading new HTML.
 
 \(fn &optional ARG)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "skewer-html" '("skewer-html-")))
+
 ;;;***
 
-;;;### (autoloads nil "skewer-mode" "skewer-mode.el" (23421 19419
-;;;;;;  0 0))
+;;;### (autoloads nil "skewer-mode" "skewer-mode.el" (0 0 0 0))
 ;;; Generated autoloads from skewer-mode.el
 
 (autoload 'list-skewer-clients "skewer-mode" "\
@@ -70,10 +82,11 @@ Connect an inferior PhantomJS process to Skewer, returning the process.
 
 \(fn)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "skewer-mode" '("skewer" "phantomjs-program-name" "httpd/skewer/")))
+
 ;;;***
 
-;;;### (autoloads nil "skewer-repl" "skewer-repl.el" (23421 19419
-;;;;;;  0 0))
+;;;### (autoloads nil "skewer-repl" "skewer-repl.el" (0 0 0 0))
 ;;; Generated autoloads from skewer-repl.el
 
 (autoload 'skewer-repl--response-hook "skewer-repl" "\
@@ -88,10 +101,11 @@ Start a JavaScript REPL to be evaluated in the visiting browser.
 
 (eval-after-load 'skewer-mode '(progn (add-hook 'skewer-response-hook #'skewer-repl--response-hook) (add-hook 'skewer-repl-mode-hook #'skewer-repl-mode-compilation-shell-hook) (define-key skewer-mode-map (kbd "C-c C-z") #'skewer-repl)))
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "skewer-repl" '("skewer-" "company-skewer-repl")))
+
 ;;;***
 
-;;;### (autoloads nil "skewer-setup" "skewer-setup.el" (23421 19419
-;;;;;;  0 0))
+;;;### (autoloads nil "skewer-setup" "skewer-setup.el" (0 0 0 0))
 ;;; Generated autoloads from skewer-setup.el
 
 (autoload 'skewer-setup "skewer-setup" "\
@@ -101,8 +115,7 @@ Fully integrate Skewer into js2-mode, css-mode, and html-mode buffers.
 
 ;;;***
 
-;;;### (autoloads nil nil ("cache-table.el" "skewer-mode-pkg.el")
-;;;;;;  (23421 19419 0 0))
+;;;### (autoloads nil nil ("skewer-mode-pkg.el") (0 0 0 0))
 
 ;;;***
 
@@ -110,5 +123,6 @@ Fully integrate Skewer into js2-mode, css-mode, and html-mode buffers.
 ;; version-control: never
 ;; no-byte-compile: t
 ;; no-update-autoloads: t
+;; coding: utf-8
 ;; End:
 ;;; skewer-mode-autoloads.el ends here

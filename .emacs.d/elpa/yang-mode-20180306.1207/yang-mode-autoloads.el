@@ -1,9 +1,12 @@
 ;;; yang-mode-autoloads.el --- automatically extracted autoloads
 ;;
 ;;; Code:
-(add-to-list 'load-path (directory-file-name (or (file-name-directory #$) (car load-path))))
+
+(add-to-list 'load-path (directory-file-name
+                         (or (file-name-directory #$) (car load-path))))
+
 
-;;;### (autoloads nil "yang-mode" "yang-mode.el" (23700 14134 0 0))
+;;;### (autoloads nil "yang-mode" "yang-mode.el" (0 0 0 0))
 ;;; Generated autoloads from yang-mode.el
 
 (autoload 'yang-mode "yang-mode" "\
@@ -19,11 +22,14 @@ Key bindings:
 
 (add-to-list 'auto-mode-alist '("\\.yang\\'" . yang-mode))
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "yang-mode" '("yang-")))
+
 ;;;***
 
 ;; Local Variables:
 ;; version-control: never
 ;; no-byte-compile: t
 ;; no-update-autoloads: t
+;; coding: utf-8
 ;; End:
 ;;; yang-mode-autoloads.el ends here

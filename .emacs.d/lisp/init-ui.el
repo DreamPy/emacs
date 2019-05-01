@@ -6,6 +6,9 @@
 ;; (setq display-time-24hr-format t)
 ;; (setq display-time-day-and-date t)
 
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
+(setq indent-line-function 'insert-tab)
 (global-linum-mode 1)
 (global-hl-line-mode 1)
 (setq cursor-type 'bar)

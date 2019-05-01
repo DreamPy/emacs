@@ -1,18 +1,4 @@
-﻿(when (>= emacs-major-version 24)
-  (require 'package)
-  (setq package-enable-at-startup nil)
-  (package-initialize)
-  (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
-  (eval-when-compile
-    (require 'use-package))
-  (setq use-package-verbose nil)
-  (setq use-package-always-ensure t)
-  (setq package-archives '(("gnu"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-                         ("melpa" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
-  )
-(require 'cl)
+﻿(require 'cl)
 
 (defvar my/packages '(
 		      company
@@ -40,7 +26,6 @@
     (when (not(package-installed-p pkg))
       (package-install pkg))))
 
-(require 'use-package)
 (add-to-list 'load-path "~/.emacs.d/lisp/auto-save/")
 (require 'auto-save)
 (auto-save-mode t)
@@ -156,11 +141,11 @@
   :defer t
   :init
   (setq ivy-re-builders-alist
-	'((counsel-ag . ivy--regex-plus)
-	  (counsel-grep . ivy--regex-plus)
-	  (swiper . ivy--regex-plus)
-	  (t . ivy--regex-fuzzy))
-	ivy-initial-inputs-alist nil)
+        '((counsel-ag . ivy--regex-plus)
+          (counsel-grep . ivy--regex-plus)
+          (swiper . ivy--regex-plus)
+          (t . ivy--regex-fuzzy))
+        ivy-initial-inputs-alist nil)
   )
 (use-package helpful
   :defer 1
@@ -217,6 +202,43 @@
   :hook (company-mode . company-posframe-mode))
 
 (defconst mage-cache-dir "~/.local/cache/")
+(use-package undo-tree
+  :defer 1
+  :config
+  (setq undo-tree-auto-save-history nil
+        ;; undo-in-region is known to cause undo history corruption, which can
+        ;; be very destructive! Disabling it deters the error, but does not fix
+        ;; it entirely!
+        undo-tree-enable-undo-in-region nil
+        undo-tree-history-directory-alist
+        `(("." . ,(concat mage-cache-dir "undo-tree-hist/"))))
+  (global-undo-tree-mode +1)
+
+  ;; compress undo history with xz
+  (defun mage*undo-tree-make-history-save-file-name (file)
+    (cond ((executable-find "zstd") (concat file ".zst"))
+          ((executable-find "gzip") (concat file ".gz"))
+          (file)))
+  (advice-add #'undo-tree-make-history-save-file-name :filter-return
+              #'mage*undo-tree-make-history-save-file-name)
+
+  (defun mage*strip-text-properties-from-undo-history (&rest args)
+    (dolist (item buffer-undo-list)
+      (and (consp item)
+           (stringp (car item))
+           (setcar item (substring-no-properties (car item))))))
+  (advice-add 'undo-list-transfer-to-tree :before #'mage*strip-text-properties-from-undo-history)
+
+  (defun mage*compress-undo-tree-history (orig-fn &rest args)
+    (cl-letf* ((jka-compr-verbose nil)
+               (old-write-region (symbol-function #'write-region))
+               ((symbol-function #'write-region)
+                (lambda (start end filename &optional append _visit &rest args)
+                  (apply old-write-region start end filename append 0 args))))
+      (apply orig-fn args)))
+  (advice-add #'undo-tree-save-history :around #'mage*compress-undo-tree-history))
+
+
 (use-package projectile
   :defer 1
   :init
@@ -332,4 +354,269 @@
 (setq default-input-method "pyim")
 (global-set-key (kbd "C-\\") 'toggle-input-method)
 ;;https://blog.csdn.net/xh_acmagic/article/details/78939246
+(use-package recentf
+  :defer 1
+  :commands recentf-open-files
+  :config
+  (setq recentf-save-file (concat mage-cache-dir "recentf")
+    recentf-auto-cleanup 120
+    recentf-max-menu-items 0
+    recentf-max-saved-items 300
+    recentf-filename-handlers '(file-truename)
+    )
+  ;; 关闭载入recentf文件的提示
+  (cl-letf* (((symbol-function 'load-file) (lambda (file) (load file nil t) )))
+(recentf-mode +1)))
+
+(use-package popwin
+  :defer 1
+  :config
+  (popwin-mode +1))
+
+
+(use-package smartparens
+  :defer 1
+  :commands (sp-pair sp-local-pairs)
+  :config
+  (require 'smartparens-config)
+  (setq sp-highlight-pair-overlay nil
+    sp-highlight-wrap-overlay nil
+    sp-highlight-wrap-tag-overlay nil
+    sp-show-pair-from-inside t
+    sp-cancel-autoskip-on-backward-movement nil
+    sp-show-pair-delay 0.1
+    sp-max-pair-length 4
+    sp-max-prefix-length 50
+    sp-escape-quotes-after-insert nil)
+  (smartparens-global-mode +1)
+  )
+(use-package isolate
+  :defer 1
+  :load-path (lambda() (concat mage-ext-dir "isolate/"))
+  :config
+  (add-to-list 'isolate-pair-list
+       '(
+         (from . "os-\\(.*\\)4")
+         (to-left . (lambda(from)
+              (format "#+BEGIN_SRC %s\n" (match-string 1 from))))
+         (to-right . "\n#+END_SRC\n")
+         (condition . (lambda (_) (if (equal major-mode 'org-mode) t nil)))
+         )
+       ))
+
+(defun +my/better-font()
+  (interactive)
+  ;; english font
+  (if (display-graphic-p)
+  (progn
+    (set-face-attribute 'default nil :font (format   "%s:pixelsize=%d" "Source Code Pro" 17)) ;; 11 13 17 19 23
+    ;; chinese font
+    (dolist (charset '(kana han symbol cjk-misc bopomofo))
+      (set-fontset-font (frame-parameter nil 'font)
+            charset
+            (font-spec :family "WenQuanYi Micro Hei Mono" :size 20)))) ;; 14 16 20 22 28
+))
+
+(defun +my|init-font(frame)
+  (with-selected-frame frame
+(if (display-graphic-p)
+    (+my/better-font))))
+
+(if (and (fboundp 'daemonp) (daemonp))
+(add-hook 'after-make-frame-functions #'+my|init-font)
+  (+my/better-font))
+(defun mode-line-fill (face reserve)
+  "Return empty space using FACE and leaving RESERVE space on the right."
+  (unless reserve
+(setq reserve 20))
+  (when (and window-system (eq 'right (get-scroll-bar-mode)))
+(setq reserve (- reserve 3)))
+  (propertize " "
+      'display `((space :align-to
+                (- (+ right right-fringe right-margin) ,reserve)))
+      'face 'face))
+
+(setq projectile-mode-line
+  (quote (:eval (when (projectile-project-p)
+          (propertize (format " P[%s]" (projectile-project-name))
+                  'face 'font-lock-variable-name-face)))))
+
+(setq buffer-name-mode-line
+  (quote (:eval (propertize "%b " 'face 'font-lock-string-face))))
+
+(setq major-mode-mode-line
+  (quote (:eval (propertize "%m " 'face 'font-lock-keyword-face))))
+
+(setq file-status-mode-line
+  (quote (:eval (concat "["
+            (when (buffer-modified-p)
+              (propertize "Mod "
+                      'face 'font-lock-warning-face
+                      'help-echo "Buffer has been modified"))
+            (propertize (if overwrite-mode "Ovr" "Ins")
+                    'face 'font-lock-preprocessor-face
+                    'help-echo (concat "Buffer is in "
+                           (if overwrite-mode
+                               "overwrite"
+                             "insert") " mode"))
+            (when buffer-read-only
+              (propertize " RO"
+                      'face 'font-lock-type-face
+                      'help-echo "Buffer is read-only"))
+            "]"))))
+
+(setq flycheck-status-mode-line
+  (quote (:eval (pcase flycheck-last-status-change
+          (`finished
+           (let* ((error-counts (flycheck-count-errors flycheck-current-errors))
+              (errors (cdr (assq 'error error-counts)))
+              (warnings (cdr (assq 'warning error-counts)))
+              (face (cond (errors 'error)
+                      (warnings 'warn)
+                      (t 'success))))
+             (propertize (concat "["
+                     (cond
+                      (errors (format "?:%s" errors))
+                      (warnings (format "?:%s" warnings))
+                      (t "?"))
+                     "]")
+                 'face face)))))))
+
+
+
+(setq line-column-mode-line
+  (concat
+   "("
+   (propertize "%02l" 'face 'font-lock-type-face)
+   ":"
+   (propertize "%02c" 'face 'font-lock-type-face)
+   ")"))
+
+(setq encoding-mode-line
+  (quote (:eval (propertize
+         (concat (pcase (coding-system-eol-type buffer-file-coding-system)
+               (0 "LF ")
+               (1 "CRLF ")
+               (2 "CR "))
+             (let ((sys (coding-system-plist buffer-file-coding-system)))
+               (if (memq (plist-get sys :category) '(coding-category-undecided coding-category-utf-8))
+               "UTF-8"
+                 (upcase (symbol-name (plist-get sys :name)))))
+             )))))
+
+(setq time-mode-line
+  (quote (:eval (propertize (format-time-string "%H:%M")))))
+
+(setq-default mode-line-format
+      (list
+       " %1"
+       major-mode-mode-line
+       " %1"
+       buffer-name-mode-line
+       " %1"
+       file-status-mode-line
+       " %1"
+       projectile-mode-line
+       " %1"
+       line-column-mode-line
+       " "
+       flycheck-status-mode-line
+       (mode-line-fill 'mode-line 15)
+       encoding-mode-line
+       " "
+       time-mode-line
+       ))
+(use-package yasnippet
+  :defer t
+  :commands (yas-minor-mode-on yas-expand yas-expand-snippet yas-lookup-snippet
+               yas-insert-snippet yas-new-snippet yas-visit-snippet-file)
+  :init
+  (add-hook 'prog-mode-hook #'yas-minor-mode-on))
+(use-package yasnippet-snippets
+  :after yasnippet)
+
+(use-package lsp-mode
+  :defer 1
+  :config
+  (setq lsp-project-blacklist '("^/usr/")
+    lsp-highlight-symbol-at-point nil)
+  (add-hook 'lsp-after-open-hook 'lsp-enable-imenu))
+(use-package lsp-ui
+  :after (lsp-mode)
+  :hook (lsp-mode . lsp-ui-mode)
+  :config
+  (setq lsp-ui-sideline-enable nil
+    lsp-ui-sideline-show-symbol nil
+    lsp-ui-sideline-show-symbol nil
+    lsp-ui-sideline-ignore-duplicate t
+    lsp-ui-doc-max-width 50
+    )
+  :bind (:map lsp-ui-peek-mode-map
+      ("h" . lsp-ui-peek--select-prev-file)
+      ("j" . lsp-ui-peek--select-next)
+      ("k" . lsp-ui-peek--select-prev)
+      ("l" . lsp-ui-peek--select-next-file)
+      :map lsp-ui-mode-map
+      ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+      ([remap xref-find-references]  . lsp-ui-peek-find-references)
+      ))
+(use-package company-lsp
+  :after (company lsp-mode)
+  :init
+  (setq company-lsp-cache-candidates nil)
+  (add-hook 'lsp-mode-hook
+    (lambda()
+      (add-to-list (make-local-variable 'company-backends)
+           'company-lsp)))
+  )
+(defvar mage-org-dir "~/Documents/Org/")
+(use-package org
+  :defer 1
+  :ensure org-plus-contrib
+  :config
+  (setq org-ellipsis " ▼ "
+    org-src-window-setup 'current-window
+    org-image-actual-width '(400)
+    org-export-backends '(ascii html latex md odt pandoc)
+    org-ditaa-jar-path (concat mage-etc-dir "ditaa.jar")
+    org-agenda-files (list (concat mage-org-dir "gtd.org"))
+    )
+  (setcar (nthcdr 0 org-emphasis-regexp-components) " \t('\"{[:nonascii:]")
+  (setcar (nthcdr 1 org-emphasis-regexp-components) "- \t.,:!?;'\")}\\[[:nonascii:]")
+  (org-set-emph-re 'org-emphasis-regexp-components org-emphasis-regexp-components)
+  (org-element-update-syntax)
+  )
+
+  (use-package ox-pandoc
+  :defer 1)
+
+ (use-package ctable
+   :defer 1)
+ (use-package epic
+   :defer 1)
+ (use-package orglue
+   :defer 1)
+
+;; (use-package org-octopress
+;;   :after (ctable epic orglue)
+;;   :load-path (lambda() (concat mage-ext-dir "org-octopress/"))
+;;   :config
+;;   (require 'ox-jekyll)
+;;   (setq
+;;    org-octopress-directory-top (expand-file-name "source" mage-root-dir)
+;;    org-octopress-directory-posts (expand-file-name "source/_posts" mage-root-dir)
+;;    org-octopress-directory-org-top mage-root-dir
+;;    org-octopress-directory-org-posts (expand-file-name "blog" mage-root-dir)
+;;    org-octopress-setup-file (expand-file-name "setupfile.org" mage-root-dir)
+;;    )
+;;   )
+
+(defun mage/open-org-octopress()
+  (interactive)
+  (let ((buffer (get-buffer "Octopress")))
+    (if buffer
+        (switch-to-buffer buffer)
+      (org-octopress))))
+
+(use-package magit)
 (provide 'init-packages)
